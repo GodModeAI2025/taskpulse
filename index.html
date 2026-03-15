@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskPulse — Agent Task Infrastructure</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;
+--surface:#16161f;--surface2:#1e1e2a;
+--text:#e8e6f0;--text2:#9b97b0;--text3:#6b6780;
+--accent:#c084fc;--accent2:#a855f7;--accent3:#7c3aed;
+--green:#34d399;--green2:#10b981;--greenbg:rgba(52,211,153,.08);
+--amber:#fbbf24;--amberbg:rgba(251,191,36,.06);
+--coral:#f87171;--coralbg:rgba(248,113,113,.06);
+--blue:#60a5fa;--bluebg:rgba(96,165,250,.06);
+--border:rgba(139,130,170,.12);--border2:rgba(139,130,170,.06);
+--glow:rgba(192,132,252,.15);
+--font:'Outfit',system-ui,sans-serif;
+--mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.7;overflow-x:hidden}
+::selection{background:var(--accent3);color:#fff}
+
+.container{max-width:1120px;margin:0 auto;padding:0 2rem}
+
+/* Noise overlay */
+body::before{content:'';position:fixed;inset:0;opacity:.035;
+background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+pointer-events:none;z-index:9999}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;position:relative;padding:6rem 0}
+.hero::before{content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,var(--glow) 0%,transparent 70%);pointer-events:none;opacity:.5}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:.82rem;color:var(--text2);margin-bottom:2rem;letter-spacing:.02em}
+.hero-badge span{color:var(--green);font-weight:600}
+.hero h1{font-size:clamp(3rem,7vw,5.5rem);font-weight:800;line-height:1.05;letter-spacing:-.04em;margin-bottom:1.5rem;background:linear-gradient(135deg,var(--text) 40%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1.1rem,2vw,1.4rem);color:var(--text2);max-width:680px;line-height:1.6;font-weight:300}
+.hero-actions{display:flex;gap:1rem;margin-top:2.5rem;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:12px;background:var(--accent3);color:#fff;font-weight:600;font-size:1rem;text-decoration:none;transition:all .25s;border:none;cursor:pointer;font-family:var(--font)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 32px rgba(124,58,237,.35)}
+.btn-secondary{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:12px;background:var(--surface);color:var(--text);font-weight:500;font-size:1rem;text-decoration:none;transition:all .25s;border:1px solid var(--border);cursor:pointer;font-family:var(--font)}
+.btn-secondary:hover{border-color:var(--accent);background:var(--surface2)}
+.hero-stats{display:flex;gap:3rem;margin-top:4rem}
+.stat-item{display:flex;flex-direction:column}
+.stat-num{font-size:1.8rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.stat-label{font-size:.82rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:.15rem}
+
+/* ── SECTION ── */
+section{padding:6rem 0}
+.section-label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:1rem}
+.section-title{font-size:clamp(2rem,4vw,3rem);font-weight:700;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.15}
+.section-desc{font-size:1.1rem;color:var(--text2);max-width:640px;font-weight:300}
+
+/* ── PROBLEM SECTION ── */
+.problems{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:3rem}
+.problem-card{padding:1.75rem;border-radius:16px;border:1px solid var(--border2);background:var(--surface);transition:all .3s}
+.problem-card:hover{border-color:var(--border);transform:translateY(-2px)}
+.problem-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem}
+.problem-card:nth-child(1) .problem-icon{background:var(--coralbg);color:var(--coral)}
+.problem-card:nth-child(2) .problem-icon{background:var(--amberbg);color:var(--amber)}
+.problem-card:nth-child(3) .problem-icon{background:var(--bluebg);color:var(--blue)}
+.problem-card h3{font-size:1.1rem;font-weight:600;margin-bottom:.5rem}
+.problem-card p{font-size:.92rem;color:var(--text2);line-height:1.6}
+
+/* ── FEATURE GRID ── */
+.features{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem}
+.feature-card{padding:2rem;border-radius:16px;border:1px solid var(--border2);background:var(--surface);position:relative;overflow:hidden;transition:all .3s}
+.feature-card:hover{border-color:var(--accent);box-shadow:0 0 40px rgba(124,58,237,.08)}
+.feature-card.wide{grid-column:span 2}
+.feature-tag{display:inline-block;padding:.25rem .75rem;border-radius:8px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem}
+.tag-solo{background:var(--greenbg);color:var(--green)}
+.tag-orch{background:rgba(192,132,252,.1);color:var(--accent)}
+.tag-core{background:var(--bluebg);color:var(--blue)}
+.feature-card h3{font-size:1.25rem;font-weight:600;margin-bottom:.5rem}
+.feature-card p{font-size:.92rem;color:var(--text2);line-height:1.6}
+
+/* ── CODE BLOCK ── */
+.code-block{margin-top:1.5rem;background:var(--bg);border-radius:12px;border:1px solid var(--border2);overflow:hidden}
+.code-header{display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;border-bottom:1px solid var(--border2);font-size:.75rem;color:var(--text3)}
+.code-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);opacity:.4}
+.code-body{padding:1.25rem;font-family:var(--mono);font-size:.82rem;line-height:1.8;overflow-x:auto;color:var(--text2)}
+.code-body .kw{color:var(--accent)}
+.code-body .str{color:var(--green)}
+.code-body .cmt{color:var(--text3);font-style:italic}
+.code-body .val{color:var(--amber)}
+.code-body .tag{color:var(--blue)}
+
+/* ── ARCHITECTURE DIAGRAM ── */
+.arch-diagram{margin-top:3rem;padding:2.5rem;border-radius:20px;border:1px solid var(--border2);background:var(--bg2)}
+.arch-row{display:flex;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.arch-box{padding:.75rem 1.5rem;border-radius:10px;font-size:.85rem;font-weight:500;text-align:center;min-width:140px;border:1px solid;transition:all .3s}
+.arch-box:hover{transform:translateY(-2px)}
+.arch-orch{background:rgba(192,132,252,.08);border-color:rgba(192,132,252,.25);color:var(--accent)}
+.arch-agent{background:var(--greenbg);border-color:rgba(52,211,153,.25);color:var(--green)}
+.arch-file{background:var(--bluebg);border-color:rgba(96,165,250,.25);color:var(--blue)}
+.arch-arrow{text-align:center;color:var(--text3);font-size:1.5rem;margin:.5rem 0;letter-spacing:.5em}
+.arch-label{text-align:center;font-size:.78rem;color:var(--text3);margin-bottom:.75rem}
+
+/* ── HOW IT WORKS ── */
+.steps{display:grid;gap:0;margin-top:3rem;position:relative}
+.step{display:grid;grid-template-columns:60px 1fr;gap:1.5rem;padding:2rem 0;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;left:29px;top:72px;bottom:0;width:1px;background:linear-gradient(to bottom,var(--accent3),var(--border2))}
+.step-num{width:60px;height:60px;border-radius:16px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:var(--accent);position:relative;z-index:1}
+.step h3{font-size:1.15rem;font-weight:600;margin-bottom:.35rem}
+.step p{font-size:.92rem;color:var(--text2);line-height:1.6}
+
+/* ── COMPARISON ── */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem}
+.compare-card{padding:2rem;border-radius:16px;border:1px solid var(--border2);background:var(--surface)}
+.compare-card h3{font-size:1.2rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.compare-list{list-style:none;display:flex;flex-direction:column;gap:.6rem}
+.compare-list li{font-size:.9rem;color:var(--text2);display:flex;align-items:flex-start;gap:.5rem;line-height:1.5}
+.compare-list li::before{content:'→';color:var(--accent);font-weight:600;flex-shrink:0}
+.compare-card.highlight{border-color:rgba(52,211,153,.3);background:linear-gradient(135deg,var(--surface),rgba(52,211,153,.03))}
+.compare-card.highlight h3{color:var(--green)}
+.compare-card.dim h3{color:var(--coral)}
+.compare-card.dim li::before{color:var(--coral);content:'✕'}
+
+/* ── TESTIMONIAL / QUOTE ── */
+.quote-block{margin-top:4rem;padding:3rem;border-radius:20px;border:1px solid var(--border2);background:linear-gradient(135deg,var(--surface),rgba(124,58,237,.03));text-align:center}
+.quote-mark{font-size:4rem;line-height:1;color:var(--accent);opacity:.3;font-family:Georgia,serif}
+.quote-text{font-size:1.25rem;font-weight:300;max-width:640px;margin:0 auto;line-height:1.7;color:var(--text)}
+.quote-author{margin-top:1.5rem;font-size:.88rem;color:var(--text3)}
+
+/* ── CTA ── */
+.cta-section{padding:8rem 0;text-align:center}
+.cta-section h2{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:700;letter-spacing:-.03em;margin-bottom:1rem;background:linear-gradient(135deg,var(--text) 40%,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta-section p{font-size:1.1rem;color:var(--text2);max-width:540px;margin:0 auto 2.5rem;font-weight:300}
+
+/* ── FOOTER ── */
+footer{padding:3rem 0;border-top:1px solid var(--border2);text-align:center;font-size:.82rem;color:var(--text3)}
+footer a{color:var(--accent);text-decoration:none}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{opacity:0;animation:fadeUp .8s ease forwards}
+.delay-1{animation-delay:.15s}.delay-2{animation-delay:.3s}.delay-3{animation-delay:.45s}.delay-4{animation-delay:.6s}
+
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.pulse{animation:pulse 2.5s ease-in-out infinite}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+.features{grid-template-columns:1fr}
+.feature-card.wide{grid-column:span 1}
+.compare{grid-template-columns:1fr}
+.hero-stats{flex-wrap:wrap;gap:2rem}
+.hero h1{font-size:2.8rem}
+.arch-row{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+<div class="container">
+  <div class="hero-badge fade-in">
+    <span>●</span> Open Source — MIT License
+  </div>
+  <h1 class="fade-in delay-1">Give your AI agents<br>a brain for planning.</h1>
+  <p class="hero-sub fade-in delay-2">TaskPulse ist dateibasierte Task-Infrastruktur für KI-Agents. Kein CLI, kein Binary, keine Datenbank. Nur Markdown + YAML in einem <code style="background:var(--surface);padding:.15rem .5rem;border-radius:6px;font-family:var(--mono);font-size:.9em">.taskpulse/</code> Verzeichnis.</p>
+  <div class="hero-actions fade-in delay-3">
+    <a href="https://github.com/GodModeAI2025/taskpulse" target="_blank" class="btn-primary">
+      <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub Repo
+    </a>
+    <a href="#how-it-works" class="btn-secondary">Wie funktioniert's? ↓</a>
+  </div>
+  <div class="hero-stats fade-in delay-4">
+    <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">Dependencies</span></div>
+    <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">Installation</span></div>
+    <div class="stat-item"><span class="stat-num">2</span><span class="stat-label">Modi</span></div>
+    <div class="stat-item"><span class="stat-num">∞</span><span class="stat-label">Agents</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ PROBLEM ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Das Problem</span>
+  <h2 class="section-title">KI-Agents vergessen alles.</h2>
+  <p class="section-desc">Jede Konversation startet bei Null. Kein Fortschritt, keine Entscheidungshistorie, kein Koordinationsprotokoll. Das macht komplexe Aufgaben unmöglich.</p>
+  <div class="problems">
+    <div class="problem-card">
+      <div class="problem-icon">⊘</div>
+      <h3>Kein Gedächtnis über Sessions</h3>
+      <p>Ein Agent der gestern 80% einer Aufgabe erledigt hat, weiß heute nichts mehr davon. Jede Session ist ein Neustart — Kontext, Entscheidungen, Fortschritt: alles weg.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">⚡</div>
+      <h3>Parallele Agents kollidieren</h3>
+      <p>Zwei Agents gleichzeitig? ID-Kollisionen, Race Conditions, überschriebene Dateien. Ohne Koordinationsprotokoll ist Multi-Agent-Arbeit pures Chaos.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">◇</div>
+      <h3>Kein Statusüberblick</h3>
+      <p>„Wie weit bist du?" — Eine Frage, die kein Agent beantworten kann. Ohne strukturierte Dokumentation gibt es keinen Projektstand, keine Blocker-Sichtbarkeit, keine Roadmap.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ SOLUTION ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Die Lösung</span>
+  <h2 class="section-title">Markdown-Dateien. Mehr braucht es nicht.</h2>
+  <p class="section-desc">TaskPulse gibt Agents eine strukturierte Planungsschicht — als reine Dateisystem-Konvention. Agents lesen und schreiben Markdown mit YAML-Frontmatter. Fertig.</p>
+
+  <div class="features">
+    <div class="feature-card">
+      <span class="feature-tag tag-solo">Solo-Modus</span>
+      <h3>Ein Agent, volle Kontrolle</h3>
+      <p>Ein einzelner Agent plant, arbeitet und dokumentiert sequentiell. Er zerlegt Aufgaben in Sub-Tasks, hakt Schritte ab, protokolliert Entscheidungen und liefert jederzeit einen Statusüberblick.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-tag tag-orch">Orchestrator-Modus</span>
+      <h3>Parallele Agents, null Kollisionen</h3>
+      <p>Ein übergeordneter Orchestrator verteilt Arbeit an Subagents — mit partitionierten ID-Ranges und isolierten Schreibbereichen. Kein Race Condition, kein Chaos.</p>
+    </div>
+
+    <div class="feature-card wide">
+      <span class="feature-tag tag-core">Kern-Feature</span>
+      <h3>Alles ist eine Datei</h3>
+      <p>Jeder Task ist ein <code style="font-family:var(--mono);background:var(--bg);padding:.15rem .4rem;border-radius:4px;font-size:.85em">TP-001.md</code> mit YAML-Frontmatter. Status, Priorität, Abhängigkeiten, Ergebnisse — alles versionierbar, durchsuchbar und menschenlesbar. Keine Datenbank, kein Lock-in, kein Vendor.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span> TP-003.md</div>
+        <div class="code-body"><span class="kw">---</span>
+<span class="tag">id</span>: <span class="str">TP-003</span>
+<span class="tag">title</span>: <span class="str">"Auth-Middleware Refactoring"</span>
+<span class="tag">type</span>: <span class="val">feature</span>
+<span class="tag">status</span>: <span class="val">in_progress</span>
+<span class="tag">priority</span>: <span class="val">high</span>
+<span class="tag">agent</span>: <span class="str">"code-agent"</span>
+<span class="tag">blocked_by</span>: []
+<span class="tag">output</span>: [<span class="str">"src/middleware/auth.ts"</span>]
+<span class="kw">---</span>
+
+<span class="cmt">## Plan</span>
+1. [x] Bestehende Middleware analysieren
+2. [x] JWT-Validierung implementieren
+3. [ ] Rate-Limiting hinzufügen
+4. [ ] Tests schreiben
+
+<span class="cmt">## Entscheidungen</span>
+- <span class="str">JWT statt Session-Cookies</span> — Stateless, skalierbar, Subagent-kompatibel</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ ARCHITECTURE ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Architektur</span>
+  <h2 class="section-title">Orchestrator-Modus im Detail</h2>
+  <p class="section-desc">Partitionierte ID-Ranges eliminieren Kollisionen. Jeder Subagent hat seinen eigenen Schreibbereich — kollisionsfrei, parallel, skalierbar.</p>
+
+  <div class="arch-diagram">
+    <div class="arch-row">
+      <div class="arch-box arch-orch" style="min-width:320px">
+        <strong>Orchestrator</strong><br>
+        <span style="font-size:.78rem;opacity:.7">Vergibt Ranges · Prüft Abhängigkeiten · Konsolidiert</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↓ &nbsp; ↓ &nbsp; ↓</div>
+    <div class="arch-label">ID-Range Partitionierung</div>
+    <div class="arch-row">
+      <div class="arch-box arch-agent">
+        <strong>Code-Agent</strong><br>
+        <span style="font-size:.78rem;opacity:.7">Range 100–149</span>
+      </div>
+      <div class="arch-box arch-agent">
+        <strong>Test-Agent</strong><br>
+        <span style="font-size:.78rem;opacity:.7">Range 150–199</span>
+      </div>
+      <div class="arch-box arch-agent">
+        <strong>Docs-Agent</strong><br>
+        <span style="font-size:.78rem;opacity:.7">Range 200–249</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↓ &nbsp; ↓ &nbsp; ↓</div>
+    <div class="arch-row">
+      <div class="arch-box arch-file">
+        <span style="font-family:var(--mono);font-size:.8rem">TP-103.md</span>
+      </div>
+      <div class="arch-box arch-file">
+        <span style="font-family:var(--mono);font-size:.8rem">TP-155.md</span>
+      </div>
+      <div class="arch-box arch-file">
+        <span style="font-family:var(--mono);font-size:.8rem">TP-201.md</span>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1.5rem">
+      <span style="font-size:.78rem;color:var(--text3);font-family:var(--mono)">.taskpulse/</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ HOW IT WORKS ═══════════ -->
+<section id="how-it-works">
+<div class="container">
+  <span class="section-label">So funktioniert's</span>
+  <h2 class="section-title">Vom ersten Task zum Projekt-Board</h2>
+  <p class="section-desc">TaskPulse wird nicht installiert — es wird benutzt. Der Agent erkennt die Konvention und arbeitet sofort los.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <h3>Agent erkennt Aufgabe</h3>
+        <p>Ein Agent bekommt eine komplexe Aufgabe — z.B. „Refactore das Auth-System". Er prüft ob <code style="font-family:var(--mono);font-size:.85em">.taskpulse/</code> existiert. Falls nicht, legt er es selbstständig an.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <h3>Tasks werden zerlegt</h3>
+        <p>Die Aufgabe wird in Sub-Tasks mit Abhängigkeiten, Prioritäten und Plänen aufgebrochen. Jeder Task bekommt eine eigene Markdown-Datei mit vollständigem YAML-Frontmatter.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <h3>Arbeit wird dokumentiert</h3>
+        <p>Während der Arbeit aktualisiert der Agent Status, hakt Schritte ab, protokolliert Entscheidungen und schreibt Ergebnisse. Alles in der Task-Datei und im täglichen Agent-Log.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>
+        <h3>Board-Status jederzeit abrufbar</h3>
+        <p>Der Mensch fragt „Wie ist der Stand?" und bekommt sofort ein kompaktes Board mit allen aktiven Tasks, Blockern und Fortschritt — automatisch generiert aus den Dateien.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ VERGLEICH ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Vorher / Nachher</span>
+  <h2 class="section-title">Agents ohne vs. mit TaskPulse</h2>
+
+  <div class="compare">
+    <div class="compare-card dim">
+      <h3>⊘ Ohne TaskPulse</h3>
+      <ul class="compare-list">
+        <li>Agent vergisst Fortschritt nach jeder Session</li>
+        <li>Entscheidungen gehen verloren — gleiche Fehler wiederholt</li>
+        <li>Parallele Agents überschreiben sich gegenseitig</li>
+        <li>Kein Statusüberblick für den Menschen</li>
+        <li>Abhängigkeiten unsichtbar — Blocker werden übersehen</li>
+        <li>Kein Audit-Trail für Arbeit und Begründungen</li>
+      </ul>
+    </div>
+    <div class="compare-card highlight">
+      <h3>● Mit TaskPulse</h3>
+      <ul class="compare-list">
+        <li>Fortschritt persistiert in Markdown-Dateien</li>
+        <li>Entscheidungen und Begründungen protokolliert</li>
+        <li>Parallele Agents mit partitionierten ID-Ranges</li>
+        <li>Board-Status in Sekunden generiert</li>
+        <li>Abhängigkeitsketten und Blocker sichtbar</li>
+        <li>Vollständiger Audit-Trail pro Agent pro Tag</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ EXAMPLES ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Praxisbeispiele</span>
+  <h2 class="section-title">TaskPulse in Aktion</h2>
+  <p class="section-desc">Vom Solo-Sprint bis zum Multi-Agent-Sicherheitsaudit — TaskPulse skaliert mit der Komplexität.</p>
+
+  <div class="features" style="margin-top:3rem">
+    <div class="feature-card">
+      <span class="feature-tag tag-solo">Beispiel 1</span>
+      <h3>Solo: Feature-Entwicklung</h3>
+      <p>Ein Code-Agent bekommt „Implementiere API-Rate-Limiting". Er erstellt 5 Sub-Tasks, arbeitet sie sequentiell ab, dokumentiert die Entscheidung für Token-Bucket statt Sliding-Window, und liefert am Ende einen sauberen Ergebnis-Block mit Output-Pfaden.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-tag tag-orch">Beispiel 2</span>
+      <h3>Multi-Agent: Sicherheitsaudit</h3>
+      <p>Der Orchestrator erstellt drei Auftrags-Tasks: Penetrationstest (Code-Agent), OWASP-Checklist (Test-Agent), Audit-Bericht (Docs-Agent). Jeder Agent bekommt eine eigene ID-Range und arbeitet parallel. Der Orchestrator konsolidiert — zero Konflikte.</p>
+    </div>
+
+    <div class="feature-card wide">
+      <span class="feature-tag tag-core">Board-Output</span>
+      <h3>Was der Mensch sieht</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span> Board-Status</div>
+        <div class="code-body"><span class="cmt">## TaskPulse — Auth-Refactoring (Orchestrator, 3 Agents)</span>
+
+<span class="kw">### Gesamtfortschritt</span>
+Aufträge: <span class="val">3</span> | Erledigt: <span class="str">1</span> | In Arbeit: <span class="val">2</span> | Blockiert: <span class="str">0</span>
+
+<span class="kw">### code-agent</span> <span class="cmt">(Range 100-149, 12 Tasks)</span>
+- <span class="str">8 done</span>, <span class="val">3 in_progress</span>, 1 blocked
+- Aktuell: [TP-108] <span class="val">●●</span> API-Middleware — Schritt 4/6
+
+<span class="kw">### test-agent</span> <span class="cmt">(Range 150-199, 7 Tasks)</span>
+- <span class="str">4 done</span>, <span class="val">2 in_progress</span>, 1 backlog
+- Aktuell: [TP-155] <span class="val">●</span> Integration-Test Auth-Flow</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ WHY IT'S GREAT ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Warum es geil ist</span>
+  <h2 class="section-title">Die Philosophie dahinter</h2>
+
+  <div class="quote-block">
+    <div class="quote-mark">"</div>
+    <p class="quote-text">Das beste Tool ist das, das nicht installiert werden muss. TaskPulse ist eine Konvention — kein Produkt. Agents verstehen es sofort, weil es nur aus Dateien besteht die sie ohnehin schon lesen und schreiben können.</p>
+    <p class="quote-author">— Zero-Dependency-Philosophie</p>
+  </div>
+
+  <div class="features" style="margin-top:3rem">
+    <div class="feature-card">
+      <h3>🔓 Kein Lock-in</h3>
+      <p>MIT-Lizenz. Markdown-Dateien. Git-versionierbar. Du kannst TaskPulse morgen durch etwas anderes ersetzen — und verlierst nichts, weil alles menschenlesbarer Text ist.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🧩 Universell einsetzbar</h3>
+      <p>Funktioniert mit Claude Code, Claude Cowork, Codex CLI, Cursor, oder jedem anderen Agent-Framework. Die Konvention ist framework-agnostisch — es ist nur ein Ordner mit Dateien.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📈 Skaliert mit Komplexität</h3>
+      <p>Solo-Modus für einfache Aufgaben, Orchestrator-Modus für Multi-Agent-Projekte. Die gleiche Dateistruktur, das gleiche Schema, die gleichen Konventionen — nur der Koordinationslayer kommt dazu.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🔍 Stale-Detection</h3>
+      <p>Der Orchestrator erkennt verwaiste Tasks automatisch: Wenn ein Agent 30 Minuten nichts aktualisiert hat, wird der Task zurück in den Backlog gesetzt und kann neu zugewiesen werden.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ DIRECTORY ═══════════ -->
+<section>
+<div class="container">
+  <span class="section-label">Dateisystem</span>
+  <h2 class="section-title">Die Verzeichnisstruktur</h2>
+
+  <div class="code-block" style="margin-top:2rem;max-width:600px">
+    <div class="code-header"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span> Projekt-Root</div>
+    <div class="code-body"><span class="str">projekt/</span>
+├── <span class="kw">.taskpulse/</span>
+│   ├── <span class="tag">config.yml</span>           <span class="cmt"># Projektkonfiguration</span>
+│   ├── <span class="val">TP-001.md</span>            <span class="cmt"># Task</span>
+│   ├── <span class="val">TP-002.md</span>            <span class="cmt"># Task</span>
+│   ├── <span class="kw">log/</span>                  <span class="cmt"># Pro Agent partitioniert</span>
+│   │   ├── <span class="str">2026-03-08_orchestrator.md</span>
+│   │   ├── <span class="str">2026-03-08_code-agent.md</span>
+│   │   └── <span class="str">2026-03-08_test-agent.md</span>
+│   └── <span class="kw">archive/</span>              <span class="cmt"># Erledigte Tasks</span>
+│       └── <span class="val">TP-000.md</span>
+└── <span class="tag">ROADMAP.md</span>               <span class="cmt"># Auto-generiert</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<section class="cta-section">
+<div class="container">
+  <h2>Ready to go?</h2>
+  <p>Kopiere den Skill, leg los. Keine Installation, kein Setup, keine Config. Dein nächster Agent weiß sofort was zu tun ist.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <a href="https://github.com/GodModeAI2025/taskpulse" target="_blank" class="btn-primary">
+      <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Repo auf GitHub öffnen
+    </a>
+    <a href="https://github.com/GodModeAI2025/taskpulse/blob/main/SKILL.md" target="_blank" class="btn-secondary">SKILL.md lesen →</a>
+  </div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+  <p>TaskPulse — MIT License · Made by <a href="https://github.com/GodModeAI2025" target="_blank">GodModeAI2025</a></p>
+</div>
+</footer>
+
+</body>
+</html>
