@@ -37,6 +37,11 @@ created: "2026-03-08"
 updated: "2026-03-08"
 ---
 
+## Abnahmekriterien
+
+- [x] Mehr als 100 Requests/Minute pro API-Key werden mit HTTP 429 beantwortet — Nachweis: `npm test -- rate-limiter` → 6 passed
+- [x] 429-Antwort enthält `Retry-After` — Nachweis: Testfall `sets retry-after header`
+
 ## Plan
 
 1. [x] Bestehende Middleware-Architektur analysieren
@@ -52,6 +57,21 @@ Token-Bucket-Middleware. 100 Requests/Minute pro API-Key. Redis-Backend. HTTP 42
 ## Entscheidungen
 
 - **Token-Bucket statt Sliding Window**: Einfacher, Redis-freundlicher. Präzisionsverlust akzeptabel.
+
+## Sackgassen
+
+- **In-Memory-Zähler pro Prozess**: Bei mehreren Instanzen zählt jede für sich, das Limit wird vervielfacht. Deshalb Redis.
+```
+
+Solange der Task lief, stand zwischen Plan und Ergebnis ein `## Stand`, den der Agent nach jedem Schritt überschrieb, z. B. nach Schritt 3:
+
+```markdown
+## Stand
+
+- **Erledigt**: Middleware und Redis-Backend, Schritte 1–3
+- **Offen**: 429-Antwort mit Headern, Tests
+- **Hindernis**: keins
+- **Nächster Schritt**: `Retry-After` aus dem Bucket-Refill berechnen
 ```
 
 Nebenbei erstellter Bug: `.taskpulse/TP-002.md`
@@ -275,7 +295,8 @@ Neue Konversation, neuer Agent. Liest Board-State:
 1. `config.yml` laden
 2. Alle `.taskpulse/*.md` Frontmatter scannen
 3. `in_progress`-Tasks identifizieren → Plan-Checkboxen zeigen Fortschritt
-4. Agent setzt bei nächstem offenen Schritt fort
+4. `## Stand`, `## Entscheidungen` und `## Sackgassen` des Tasks lesen
+5. Agent setzt beim `Nächsten Schritt` aus dem Stand fort — Entschiedenes wird nicht neu aufgerollt, Sackgassen nicht wiederholt
 
 **Orchestrator-Modus:**
 1. `config.yml` laden — `active_ranges` zeigen welche Subagents existierten
