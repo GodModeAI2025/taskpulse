@@ -124,10 +124,7 @@ Beschreibung und Kontext.
 
 ## Abnahmekriterien
 
-Woran prüfbar erkennbar ist, dass der Task fertig ist.
-
-- [ ] Kriterium 1 — Nachweis:
-- [ ] Kriterium 2 — Nachweis:
+- [ ] Prüfbares Kriterium — Nachweis:
 
 ## Plan
 
@@ -139,11 +136,10 @@ Zerlegung in Arbeitsschritte (vom Agent befüllt).
 
 ## Stand
 
-Übergabe an den nächsten Agent, der mit leerem Kontext weitermacht. Nach jedem wesentlichen Schritt überschreiben, nicht erst am Ende.
+Übergabe an den nächsten Agent (nach jedem wesentlichen Schritt überschreiben).
 
 - **Erledigt**:
-- **Offen**:
-- **Hindernis**:
+- **Offen / Hindernis**:
 - **Nächster Schritt**:
 
 ## Ergebnis
@@ -158,12 +154,10 @@ Begründungen für Designentscheidungen während der Bearbeitung.
 
 ## Sackgassen
 
-Verworfene Ansätze und gescheiterte Versuche — damit niemand sie wiederholt.
-
 - **Versuch**: Was probiert wurde, woran es scheiterte.
 ```
 
-Abschnitte, die für einen Task nichts enthalten, dürfen fehlen. Kleine Tasks brauchen oft nur Beschreibung, Plan und Ergebnis. `Abnahmekriterien` lohnen sich immer dann, wenn „fertig" nicht offensichtlich ist; `Stand` und `Sackgassen`, sobald die Arbeit länger als eine Session dauert oder übergeben werden kann.
+`Abnahmekriterien`, `Stand` und `Sackgassen` sind optional; Tasks ohne sie bleiben gültig. Kriterien lohnen sich, wenn „fertig" nicht offensichtlich ist, `Stand` und `Sackgassen`, sobald Arbeit über eine Session hinausgeht.
 
 ### Felder
 
@@ -207,15 +201,15 @@ Die Entscheidung trifft der Agent der TaskPulse initialisiert. Wenn er Subagents
 
 1. **Board prüfen**: Existiert `.taskpulse/`? Falls nein → anlegen mit `config.yml`
 2. **Kontext laden**: Alle `.taskpulse/*.md` scannen, nur Frontmatter lesen (Token-effizient)
-3. **Bestehende Tasks prüfen**: Gibt es bereits einen Task für diese Aufgabe? Falls ja: `Stand`, `Entscheidungen` und `Sackgassen` vollständig lesen, bevor weitergearbeitet wird — Entschiedenes nicht neu aufrollen, Gescheitertes nicht wiederholen
+3. **Bestehende Tasks prüfen**: Gibt es bereits einen Task für diese Aufgabe? Falls ja: `Stand`, `Entscheidungen` und `Sackgassen` lesen, bevor weitergearbeitet wird
 4. **Haupttask erstellen**: Falls neu, Task mit type, priority, Beschreibung und — wo „fertig" nicht offensichtlich ist — `Abnahmekriterien` anlegen
 5. **Zerlegung**: Komplexe Aufgaben in Sub-Tasks zerlegen (`parent`-Feld verknüpfen)
 
 #### Während der Arbeit
 
-6. **Status aktualisieren**: `in_progress` setzen, `agent`-Feld befüllen — nur wenn alle Tasks in `blocked_by` `done` sind; sonst bleibt der Task `blocked` und ein anderer wird bearbeitet
+6. **Status aktualisieren**: `in_progress` setzen, `agent`-Feld befüllen — nur wenn alle Tasks in `blocked_by` `done` sind; sonst Status unverändert lassen und einen anderen Task wählen
 7. **Plan-Checkboxen abhaken**: Im Task-Body `[ ]` → `[x]` wenn Schritte erledigt
-8. **Stand fortschreiben**: Nach jedem wesentlichen Schritt `## Stand` überschreiben. Bricht die Session ab, hat der Nachfolger nur, was dort schon steht
+8. **Stand fortschreiben**: Nach jedem wesentlichen Schritt `## Stand` überschreiben, nicht erst am Ende
 9. **Entscheidungen protokollieren**: Im Entscheidungen-Abschnitt festhalten
 10. **Sackgassen festhalten**: Gescheiterter Ansatz → Eintrag mit Grund in `## Sackgassen`
 11. **Blocker melden**: `status: blocked`, `blocked_by` setzen, Begründung im Body
@@ -223,7 +217,7 @@ Die Entscheidung trifft der Agent der TaskPulse initialisiert. Wenn er Subagents
 
 #### Bei Abschluss
 
-13. **Abnahme prüfen**: Jedes Abnahmekriterium abhaken und mit Nachweis versehen (ausgeführter Befehl mit Ergebnis, Dateipfad, Link). Ein Kriterium ohne Nachweis gilt als nicht erfüllt
+13. **Abnahme prüfen**: Jedes Abnahmekriterium mit Nachweis abhaken (Befehl mit Ergebnis, Pfad, Link); ohne Nachweis gilt es als nicht erfüllt
 14. **Ergebnis dokumentieren**: Zusammenfassung im Ergebnis-Abschnitt
 15. **Output verknüpfen**: Pfade zu erstellten Dateien im `output`-Feld
 16. **Status**: `done` nur, wenn alle Abnahmekriterien erfüllt sind — sonst `review` (Mensch soll prüfen) oder `blocked` (etwas fehlt), mit Begründung im `Stand`
@@ -277,7 +271,7 @@ Der Orchestrator-Modus löst die fundamentalen Probleme paralleler Agents: ID-Ko
 
 1. Board erstellen oder prüfen (`.taskpulse/`, `config.yml`)
 2. Aufgabe analysieren und in verteilbare Einheiten zerlegen
-3. Für jede Einheit: Auftrags-Task mit `Abnahmekriterien` erstellen (im Orchestrator-eigenen ID-Bereich 001–099) — sie sind der Maßstab, an dem die Konsolidierung das Ergebnis misst
+3. Für jede Einheit: Auftrags-Task mit `Abnahmekriterien` erstellen (im Orchestrator-eigenen ID-Bereich 001–099) als Maßstab für die Konsolidierung
 4. ID-Ranges für Subagents festlegen und in `config.yml` registrieren
 
 #### Phase 2 — Dispatch
@@ -322,7 +316,7 @@ Auftrags-Task lesen: .taskpulse/{task-id}.md
 
 #### Phase 4 — Konsolidierung
 
-11. Prüfen ob alle Subagent-Tasks `done` oder `blocked` sind und die Abnahmekriterien der Auftrags-Tasks mit Nachweis erfüllt sind
+11. Prüfen ob alle Subagent-Tasks `done` oder `blocked` sind und vorhandene Abnahmekriterien der Auftrags-Tasks mit Nachweis erfüllt sind
 12. Subagent-Logs lesen und konsolidiertes Log schreiben:
     `log/YYYY-MM-DD_orchestrator.md`
 13. Ergebnisse zusammenführen — Auftrags-Tasks mit Ergebnissen der Sub-Tasks aktualisieren

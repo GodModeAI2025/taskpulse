@@ -69,8 +69,7 @@ Solange der Task lief, stand zwischen Plan und Ergebnis ein `## Stand`, den der 
 ## Stand
 
 - **Erledigt**: Middleware und Redis-Backend, Schritte 1–3
-- **Offen**: 429-Antwort mit Headern, Tests
-- **Hindernis**: keins
+- **Offen / Hindernis**: 429-Antwort mit Headern, Tests; kein Hindernis
 - **Nächster Schritt**: `Retry-After` aus dem Bucket-Refill berechnen
 ```
 
