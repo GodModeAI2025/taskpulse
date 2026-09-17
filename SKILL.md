@@ -122,6 +122,10 @@ updated: "2026-03-08"
 
 Beschreibung und Kontext.
 
+## Abnahmekriterien
+
+- [ ] Prüfbares Kriterium — Nachweis:
+
 ## Plan
 
 Zerlegung in Arbeitsschritte (vom Agent befüllt).
@@ -129,6 +133,14 @@ Zerlegung in Arbeitsschritte (vom Agent befüllt).
 1. [ ] Schritt 1
 2. [ ] Schritt 2
 3. [ ] Schritt 3
+
+## Stand
+
+Übergabe an den nächsten Agent (nach jedem wesentlichen Schritt überschreiben).
+
+- **Erledigt**:
+- **Offen / Hindernis**:
+- **Nächster Schritt**:
 
 ## Ergebnis
 
@@ -139,7 +151,13 @@ Zusammenfassung des Arbeitsergebnisses (vom Agent nach Abschluss befüllt).
 Begründungen für Designentscheidungen während der Bearbeitung.
 
 - **Entscheidung**: Warum so und nicht anders.
+
+## Sackgassen
+
+- **Versuch**: Was probiert wurde, woran es scheiterte.
 ```
+
+`Abnahmekriterien`, `Stand` und `Sackgassen` sind optional; Tasks ohne sie bleiben gültig. Kriterien lohnen sich, wenn „fertig" nicht offensichtlich ist, `Stand` und `Sackgassen`, sobald Arbeit über eine Session hinausgeht.
 
 ### Felder
 
@@ -183,24 +201,27 @@ Die Entscheidung trifft der Agent der TaskPulse initialisiert. Wenn er Subagents
 
 1. **Board prüfen**: Existiert `.taskpulse/`? Falls nein → anlegen mit `config.yml`
 2. **Kontext laden**: Alle `.taskpulse/*.md` scannen, nur Frontmatter lesen (Token-effizient)
-3. **Bestehende Tasks prüfen**: Gibt es bereits einen Task für diese Aufgabe?
-4. **Haupttask erstellen**: Falls neu, Task mit type, priority und Beschreibung anlegen
+3. **Bestehende Tasks prüfen**: Gibt es bereits einen Task für diese Aufgabe? Falls ja: `Stand`, `Entscheidungen` und `Sackgassen` lesen, bevor weitergearbeitet wird
+4. **Haupttask erstellen**: Falls neu, Task mit type, priority, Beschreibung und — wo „fertig" nicht offensichtlich ist — `Abnahmekriterien` anlegen
 5. **Zerlegung**: Komplexe Aufgaben in Sub-Tasks zerlegen (`parent`-Feld verknüpfen)
 
 #### Während der Arbeit
 
-6. **Status aktualisieren**: `in_progress` setzen, `agent`-Feld befüllen
+6. **Status aktualisieren**: `in_progress` setzen, `agent`-Feld befüllen — nur wenn alle Tasks in `blocked_by` `done` sind; sonst Status unverändert lassen und einen anderen Task wählen
 7. **Plan-Checkboxen abhaken**: Im Task-Body `[ ]` → `[x]` wenn Schritte erledigt
-8. **Entscheidungen protokollieren**: Im Entscheidungen-Abschnitt festhalten
-9. **Blocker melden**: `status: blocked`, `blocked_by` setzen, Begründung im Body
-10. **Neue Tasks erstellen**: Wenn weitere Aufgaben auftauchen
+8. **Stand fortschreiben**: Nach jedem wesentlichen Schritt `## Stand` überschreiben, nicht erst am Ende
+9. **Entscheidungen protokollieren**: Im Entscheidungen-Abschnitt festhalten
+10. **Sackgassen festhalten**: Gescheiterter Ansatz → Eintrag mit Grund in `## Sackgassen`
+11. **Blocker melden**: `status: blocked`, `blocked_by` setzen, Begründung im Body
+12. **Neue Tasks erstellen**: Wenn weitere Aufgaben auftauchen
 
 #### Bei Abschluss
 
-11. **Ergebnis dokumentieren**: Zusammenfassung im Ergebnis-Abschnitt
-12. **Output verknüpfen**: Pfade zu erstellten Dateien im `output`-Feld
-13. **Status**: `done` setzen
-14. **Log schreiben**: Zusammenfassung in `log/YYYY-MM-DD_{agent-name}.md`
+13. **Abnahme prüfen**: Jedes Abnahmekriterium mit Nachweis abhaken (Befehl mit Ergebnis, Pfad, Link); ohne Nachweis gilt es als nicht erfüllt
+14. **Ergebnis dokumentieren**: Zusammenfassung im Ergebnis-Abschnitt
+15. **Output verknüpfen**: Pfade zu erstellten Dateien im `output`-Feld
+16. **Status**: `done` nur, wenn alle Abnahmekriterien erfüllt sind — sonst `review` (Mensch soll prüfen) oder `blocked` (etwas fehlt), mit Begründung im `Stand`
+17. **Log schreiben**: Zusammenfassung in `log/YYYY-MM-DD_{agent-name}.md`
 
 #### ID-Vergabe im Solo-Modus
 
@@ -250,7 +271,7 @@ Der Orchestrator-Modus löst die fundamentalen Probleme paralleler Agents: ID-Ko
 
 1. Board erstellen oder prüfen (`.taskpulse/`, `config.yml`)
 2. Aufgabe analysieren und in verteilbare Einheiten zerlegen
-3. Für jede Einheit: Auftrags-Task erstellen (im Orchestrator-eigenen ID-Bereich 001–099)
+3. Für jede Einheit: Auftrags-Task mit `Abnahmekriterien` erstellen (im Orchestrator-eigenen ID-Bereich 001–099) als Maßstab für die Konsolidierung
 4. ID-Ranges für Subagents festlegen und in `config.yml` registrieren
 
 #### Phase 2 — Dispatch
@@ -295,7 +316,7 @@ Auftrags-Task lesen: .taskpulse/{task-id}.md
 
 #### Phase 4 — Konsolidierung
 
-11. Prüfen ob alle Subagent-Tasks `done` oder `blocked` sind
+11. Prüfen ob alle Subagent-Tasks `done` oder `blocked` sind und vorhandene Abnahmekriterien der Auftrags-Tasks mit Nachweis erfüllt sind
 12. Subagent-Logs lesen und konsolidiertes Log schreiben:
     `log/YYYY-MM-DD_orchestrator.md`
 13. Ergebnisse zusammenführen — Auftrags-Tasks mit Ergebnissen der Sub-Tasks aktualisieren
@@ -344,7 +365,7 @@ Ein Subagent der vom Orchestrator gestartet wird:
 1. **Auftrag lesen**: Auftrags-Task aus `.taskpulse/` laden
 2. **Eigene Range kennen**: Aus dem Dispatch-Prompt
 3. **Arbeitsplanung**: Sub-Tasks innerhalb eigener Range erstellen
-4. **Arbeit ausführen**: Normal arbeiten, Status aktualisieren, Entscheidungen protokollieren
+4. **Arbeit ausführen**: Normal arbeiten, Status aktualisieren, `Stand`, Entscheidungen und Sackgassen fortschreiben
 5. **Nur eigene Tasks ändern**: Kein Schreibzugriff auf Tasks außerhalb der eigenen Range
 6. **Eigenes Log schreiben**: `log/YYYY-MM-DD_{agent-name}.md`
 7. **Auftrags-Task aktualisieren**: Ergebnis im Auftrags-Task dokumentieren (Ausnahme: der Auftrags-Task liegt außerhalb der eigenen Range — Subagent darf den Body-Abschnitt "Ergebnis" des ihm zugewiesenen Auftrags-Tasks schreiben)
@@ -367,6 +388,7 @@ Der Orchestrator erkennt verwaiste Tasks:
 - Task ist `in_progress` aber `updated`-Datum liegt >30 Minuten zurück
 - Kein Log-Eintrag des zugewiesenen Agents seit >30 Minuten
 - Orchestrator kann: Task auf `backlog` zurücksetzen, `agent` leeren, neu zuweisen
+- Der neu zugewiesene Agent setzt am `## Stand` des verwaisten Tasks an und liest dessen `Sackgassen`, statt von vorn zu beginnen
 
 ---
 
@@ -547,6 +569,7 @@ Auf Anfrage eine `ROADMAP.md` im Projektstamm erstellen. Struktur: Aktiv → Rea
 - Dateinamen = ID: `TP-001.md`
 - `updated` bei jeder Änderung aktualisieren
 - Leere optionale Felder: `""` oder `[]`
+- Einträge unter `Entscheidungen` und `Sackgassen` werden nicht gelöscht oder umgeschrieben; ein Irrtum wird durch einen neuen Eintrag korrigiert. `Stand` dagegen wird bewusst überschrieben
 - Datumsformat: `YYYY-MM-DD`
 - UTF-8, YAML-Frontmatter zwischen `---`
 - Log-Dateien: `log/YYYY-MM-DD_{agent-name}.md` (nie geteilte Logs)
